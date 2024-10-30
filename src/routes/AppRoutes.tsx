@@ -8,6 +8,7 @@ import Inventory from '../pages/Inventory';
 import Suppliers from '../pages/Suppliers';
 import Users from '../pages/Users';
 import Settings from '../pages/Settings';
+import ProductList from '../components/ProductList';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -26,6 +27,13 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/products"
+        element={
+          <ProductList />}
+      />
+     
       <Route
         path="/products"
         element={

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { redirect } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Importa useNavigate en lugar de redirect
 
 interface User {
   id: string;
@@ -7,51 +7,51 @@ interface User {
   email: string;
   role: 'admin' | 'user';
 }
-interface Credencial {
-  access: string
-  refresh: string
+export interface Credencial {
+  access: string;
+  refresh: string;
 }
 
 interface AuthContextType {
   credencial: Credencial | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
-
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [credencial, setcredencial] = useState<Credencial | null>(null);
-  const login = async (username: string, password: string) => {
+  const [credencial, setCredencial] = useState<Credencial | null>(null);
+  const navigate = useNavigate(); // Usa useNavigate en lugar de redirect
 
+  const login = async (username: string, password: string) => {
     try {
       const response = await fetch('http://localhost:8000/api/token/', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json', // Indica el tipo de contenido
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }), // Convierte el objeto a una cadena JSON
+        body: JSON.stringify({ username, password }),
       });
+
       if (!response.ok) {
         throw new Error('Error en la solicitud de inicio de sesión');
       }
 
-      const data = await response.json(); // Procesa la respuesta como JSON
-      setcredencial(data)
-      redirect('/dashboard');
+      const data = await response.json();
+      localStorage.setItem("token", data.access)
+      setCredencial(data);
+      navigate('/dashboard'); // Navega a la página de dashboard después de iniciar sesión
       console.log('Login exitoso:', data);
     } catch (error) {
       console.error('Error en el inicio de sesión:', error);
     }
   };
 
-
-
-
   const logout = () => {
-    setcredencial(null);
+    setCredencial(null);
+    navigate('/login'); // Navega a la página de inicio de sesión al cerrar sesión
   };
 
   return (
