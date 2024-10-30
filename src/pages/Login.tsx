@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock } from 'lucide-react';
-import { fetchDataFromDjango } from '../services/apiService'; 
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -21,20 +20,6 @@ const Login = () => {
       console.error('Error al iniciar sesión:', error);
     }
   };
-
-  // useEffect(() => {
-  //   // Función para verificar la conexión al backend
-  //   const checkBackendConnection = async () => {
-  //     try {
-  //       await fetchDataFromDjango();
-  //       setConnectionMessage("Conectado al backend exitosamente");
-  //     } catch (error) {
-  //       setConnectionMessage("Error al conectar con el backend");
-  //     }
-  //   };
-
-  //   //checkBackendConnection();
-  // }, []); // Se ejecuta solo una vez al montar el componente
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

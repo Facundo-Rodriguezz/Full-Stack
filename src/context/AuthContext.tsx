@@ -14,6 +14,7 @@ export interface Credencial {
 
 interface AuthContextType {
   credencial: Credencial | null;
+  user: User | null;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [credencial, setCredencial] = useState<Credencial | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate(); // Usa useNavigate en lugar de redirect
 
   const login = async (username: string, password: string) => {
@@ -43,6 +45,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem("token", data.access)
       setCredencial(data);
       navigate('/dashboard'); // Navega a la página de dashboard después de iniciar sesión
+      const token = data.access.split('.')[1]; // Extraigo el nombre del jwt
+      const tokenDecoded = JSON.parse(atob(token)); // Decodifico el token
+      setUser({
+        id: tokenDecoded.user_id,
+        name: tokenDecoded.username,
+        email: tokenDecoded.email,
+        role: tokenDecoded.role,
+      });
+      
       console.log('Login exitoso:', data);
     } catch (error) {
       console.error('Error en el inicio de sesión:', error);
@@ -58,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         credencial,
+        user,
         isAuthenticated: !!credencial,
         login,
         logout,
