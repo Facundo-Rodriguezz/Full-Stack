@@ -14,6 +14,7 @@ interface Credencial {
 
 interface AuthContextType {
   credencial: Credencial | null;
+  user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -23,7 +24,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [credencial, setcredencial] = useState<Credencial | null>(null);
+  const [credencial, setCredencial] = useState<Credencial | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const login = async (username: string, password: string) => {
 
     try {
@@ -39,7 +41,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const data = await response.json(); // Procesa la respuesta como JSON
-      setcredencial(data)
+      setCredencial(data);
+      const token = data.access.split('.')[1]; // Extraigo el nombre del jwt
+      const tokenDecoded = JSON.parse(atob(token)); // Decodifico el token
+      setUser({
+        id: tokenDecoded.user_id,
+        name: tokenDecoded.username,
+        email: tokenDecoded.email,
+        role: tokenDecoded.role,
+      });
       redirect('/dashboard');
       console.log('Login exitoso:', data);
     } catch (error) {
@@ -51,13 +61,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   const logout = () => {
-    setcredencial(null);
+    setCredencial(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
         credencial,
+        user,
         isAuthenticated: !!credencial,
         login,
         logout,
