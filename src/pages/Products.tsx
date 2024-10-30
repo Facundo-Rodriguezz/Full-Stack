@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Package, Plus, Search } from 'lucide-react';
 
 const products = [
