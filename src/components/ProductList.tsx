@@ -19,14 +19,25 @@ const ProductList: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('Todos');
+    const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal
+    const [newProduct, setNewProduct] = useState<Product>({
+        id: 0,
+        nombre: '',
+        descripcion: '',
+        precio: 0,
+        cantidad_disponible: 0,
+        stock: 0,
+        categoria: '',
+        sku: '',
+    });
     const token = localStorage.getItem('token'); // Obtén el token de localStorage
 
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get<Product[]>('http://localhost:8000/product', { 
+                const response = await axios.get<Product[]>('http://localhost:8000/api/product/', {
                     headers: {
-                        'Authorization': `Bearer ${token}`, 
+                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
                 });
@@ -41,6 +52,40 @@ const ProductList: React.FC = () => {
 
         fetchProducts();
     }, [token]); // Agrega 'token' como dependencia para que se actualice si cambia
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setNewProduct((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const handleAddProduct = async () => {
+        try {
+            const response = await axios.post('http://localhost:8000/api/product/', newProduct, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            setProducts((prev) => [...prev, response.data]); // Agrega el nuevo producto a la lista
+            setIsModalOpen(false); // Cierra el modal
+            setNewProduct({
+                id: 0,
+                nombre: '',
+                descripcion: '',
+                precio: 0,
+                cantidad_disponible: 0,
+                stock: 0,
+                categoria: '',
+                sku: '',
+            }); // Resetea el formulario
+        } catch (error) {
+            console.error('Error al agregar el producto:', error);
+        }
+    };
 
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -65,7 +110,10 @@ const ProductList: React.FC = () => {
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Productos</h1>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
+                <button
+                    onClick={() => setIsModalOpen(true)} // Abre el modal cuando se hace clic
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+                >
                     <Plus size={20} />
                     Añadir Producto
                 </button>
@@ -151,6 +199,81 @@ const ProductList: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Modal de Añadir Producto */}
+            {isModalOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                        <h2 className="text-xl font-semibold mb-4">Añadir Producto</h2>
+                        <input
+                            type="text"
+                            name="nombre"
+                            value={newProduct.nombre}
+                            onChange={handleInputChange}
+                            placeholder="Nombre del Producto"
+                            className="w-full mb-4 px-4 py-2 border rounded-lg"
+                        />
+                        <input
+                            type="text"
+                            name="descripcion"
+                            value={newProduct.descripcion}
+                            onChange={handleInputChange}
+                            placeholder="Descripción"
+                            className="w-full mb-4 px-4 py-2 border rounded-lg"
+                        />
+                        <input
+                            type="number"
+                            name="precio"
+                            value={newProduct.precio}
+                            onChange={handleInputChange}
+                            placeholder="Precio"
+                            className="w-full mb-4 px-4 py-2 border rounded-lg"
+                        />
+                        <input
+                            type="number"
+                            name="cantidad_disponible"
+                            value={newProduct.cantidad_disponible}
+                            onChange={handleInputChange}
+                            placeholder="Cantidad Disponible"
+                            className="w-full mb-4 px-4 py-2 border rounded-lg"
+                        />
+                        <input
+                            type="number"
+                            name="stock"
+                            value={newProduct.stock}
+                            onChange={handleInputChange}
+                            placeholder="Stock"
+                            className="w-full mb-4 px-4 py-2 border rounded-lg"
+                        />
+                        <select
+                            name="categoria"
+                            value={newProduct.categoria}
+                            onChange={handleInputChange}
+                            className="w-full mb-4 px-4 py-2 border rounded-lg"
+                        >
+                            <option value="">Seleccione Categoría</option>
+                            <option value="Muebles">Muebles</option>
+                            <option value="Vasos">Vasos</option>
+                            <option value="MDF">MDF</option>
+                            <option value="Bolsas">Bolsas</option>
+                        </select>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="mr-2 text-gray-600 hover:text-gray-900"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleAddProduct}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                            >
+                                Añadir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
