@@ -15,7 +15,7 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate('/dashboard/');
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
     }

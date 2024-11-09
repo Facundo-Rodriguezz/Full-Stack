@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Importa useNavigate en lugar de redirect
 
 interface User {
@@ -13,19 +13,38 @@ export interface Credencial {
 }
 
 interface AuthContextType {
-  credencial: Credencial | null;
-  user: User | null;
+  credencial?: Credencial;
+  user?: User;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [credencial, setCredencial] = useState<Credencial | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [credencial, setCredencial] = useState<Credencial>();
+  const [user, setUser] = useState<User>();
+  const [loadingInitial, setLoadingInitial] = useState<boolean>(true);
   const navigate = useNavigate(); // Usa useNavigate en lugar de redirect
+
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    const refresh = localStorage.getItem("refresh")
+    if (token && refresh) {
+      const cred: Credencial = {access: token, refresh: refresh};
+      setCredencial(cred);
+      const tokenDecoded = JSON.parse(atob(token.split('.')[1])); 
+      setUser({
+        id: tokenDecoded.user_id,
+        name: tokenDecoded.username,
+        email: tokenDecoded.email,
+        role: tokenDecoded.role,
+      });
+      setLoadingInitial(false);
+    }
+  }, []);
 
   const login = async (username: string, password: string) => {
     try {
@@ -43,10 +62,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = await response.json();
       localStorage.setItem("token", data.access)
+      localStorage.setItem("refresh", data.refresh)
       setCredencial(data);
-      navigate('/dashboard'); // Navega a la página de dashboard después de iniciar sesión
-      const token = data.access.split('.')[1]; // Extraigo el nombre del jwt
-      const tokenDecoded = JSON.parse(atob(token)); // Decodifico el token
+      navigate('/dashboard/'); // Navega a la página de dashboard después de iniciar sesión
+      const token_split = data.access.split('.')[1]; // Extraigo el nombre del jwt
+      const tokenDecoded = JSON.parse(atob(token_split)); // Decodifico el token
       setUser({
         id: tokenDecoded.user_id,
         name: tokenDecoded.username,
@@ -58,24 +78,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error en el inicio de sesión:', error);
     }
+    setLoadingInitial(false);
   };
 
   const logout = () => {
-    setCredencial(null);
+    setCredencial(undefined);
     navigate('/login'); // Navega a la página de inicio de sesión al cerrar sesión
   };
 
+  const memoedValue = useMemo(
+    () => ({
+      credencial,
+      user,
+      isAuthenticated: !!credencial,
+      login,
+      logout,
+    }),
+    [credencial, user]
+  );
+
+
   return (
     <AuthContext.Provider
-      value={{
-        credencial,
-        user,
-        isAuthenticated: !!credencial,
-        login,
-        logout,
-      }}
+      value={memoedValue}
     >
-      {children}
+      {!loadingInitial && children}
     </AuthContext.Provider>
   );
 };

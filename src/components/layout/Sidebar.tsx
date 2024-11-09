@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,12 +10,13 @@ import {
 
 
 const navigation = [
-  { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Productos', href: '/products', icon: Package },
-  { name: 'Movimientos', href: '/inventory', icon: BarChart3 },
-  { name: 'Proveedores', href: '/suppliers', icon: Truck },
-  { name: 'Usuarios', href: '/users', icon: Users },
-  { name: 'Configuraciones', href: '/settings', icon: Settings },
+  { name: 'Panel', href: '/dashboard/', icon: LayoutDashboard },
+  { name: 'Productos', href: '/products/', icon: Package },
+  { name: 'Movimientos', href: '/inventory/', icon: BarChart3 },
+  { name: 'Proveedores', href: '/suppliers/', icon: Truck },
+  { name: 'Usuarios', href: '/users/', icon: Users },
+  { name: 'Categorías', href: '/categories/', icon: LayoutDashboard },
+  { name: 'Configuraciones', href: '/settings/', icon: Settings },
 ];
 
 const Sidebar = () => {

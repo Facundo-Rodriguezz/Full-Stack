@@ -8,7 +8,7 @@ import Inventory from '../pages/Inventory';
 import Suppliers from '../pages/Suppliers';
 import Users from '../pages/Users';
 import Settings from '../pages/Settings';
-import ProductList from '../components/ProductList';
+import Categories from '../pages/Categories';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -20,22 +20,15 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route
-        path="/dashboard"
+        path="/dashboard/"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/products"
-        element={
-          <ProductList />}
-      />
-     
-      <Route
-        path="/products"
+        path="/products/"
         element={
           <ProtectedRoute>
             <Products />
@@ -43,7 +36,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/inventory"
+        path="/inventory/"
         element={
           <ProtectedRoute>
             <Inventory />
@@ -51,7 +44,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/suppliers"
+        path="/suppliers/"
         element={
           <ProtectedRoute>
             <Suppliers />
@@ -59,7 +52,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/users"
+        path="/users/"
         element={
           <ProtectedRoute>
             <Users />
@@ -67,14 +60,22 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/settings"
+        path="/categories/"
+        element={
+          <ProtectedRoute>
+            <Categories />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/"
         element={
           <ProtectedRoute>
             <Settings />
           </ProtectedRoute>
         }
       />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/dashboard/" replace />} />
     </Routes>
   );
 };
