@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Package, Plus } from 'lucide-react';
 
-// Actualiza la interfaz Product para que coincida con los campos del modelo Django
+// Interfaz para los productos
+type Text = string;
+
 interface Product {
     id: number;
     nombre: string;
-    descripcion: string;
-    precio: number;
-    cantidad_disponible: number; // Cambia la propiedad a 'cantidad_disponible'
+    sku?: Text;
     stock: number;
-    categoria?: string; // Esto es opcional
-    sku?: string; // Esto es opcional
+    precio: string;
+    categoria?: string;
 }
 
 const ProductList: React.FC = () => {
@@ -19,18 +19,18 @@ const ProductList: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('Todos');
-    const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [productToEdit, setProductToEdit] = useState<Product | null>(null);
     const [newProduct, setNewProduct] = useState<Product>({
         id: 0,
         nombre: '',
-        descripcion: '',
-        precio: 0,
-        cantidad_disponible: 0,
-        stock: 0,
-        categoria: '',
         sku: '',
+        stock: 0,
+        precio: '',
+        categoria: '',
     });
-    const token = localStorage.getItem('token'); // Obtén el token de localStorage
+    const token = localStorage.getItem('token');
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -42,25 +42,35 @@ const ProductList: React.FC = () => {
                     },
                 });
 
-                setProducts(response.data); // Almacena los productos en el estado
-                setLoading(false); // Actualiza el estado de carga
+                setProducts(response.data);
+                setLoading(false);
             } catch (err) {
                 console.error('Error:', err);
-                setLoading(false); // Asegúrate de detener la carga en caso de error
+                setLoading(false);
             }
         };
 
         fetchProducts();
-    }, [token]); // Agrega 'token' como dependencia para que se actualice si cambia
+    }, [token]);
 
+    // Función para manejar el cambio en los inputs de los formularios
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setNewProduct((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+
+        if (productToEdit) {
+            setProductToEdit((prevProduct) => ({
+                ...prevProduct!,
+                [name]: value || "",
+            }));
+        } else {
+            setNewProduct((prevProduct) => ({
+                ...prevProduct,
+                [name]: value,
+            }));
+        }
     };
 
+    // Función para agregar un producto
     const handleAddProduct = async () => {
         try {
             const response = await axios.post('http://localhost:8000/api/product/', newProduct, {
@@ -70,31 +80,74 @@ const ProductList: React.FC = () => {
                 },
             });
 
-            setProducts((prev) => [...prev, response.data]); // Agrega el nuevo producto a la lista
-            setIsModalOpen(false); // Cierra el modal
+            setProducts((prev) => [...prev, response.data]);
+            setIsAddModalOpen(false);
             setNewProduct({
                 id: 0,
                 nombre: '',
-                descripcion: '',
-                precio: 0,
-                cantidad_disponible: 0,
-                stock: 0,
-                categoria: '',
                 sku: '',
-            }); // Resetea el formulario
+                stock: 0,
+                precio: '',
+                categoria: '',
+            });
         } catch (error) {
             console.error('Error al agregar el producto:', error);
         }
     };
 
-    const filteredProducts = products.filter(product => {
+    // Función para editar un producto
+    const handleEditProduct = async () => {
+        if (productToEdit) {
+            try {
+                const response = await axios.put(
+                    `http://localhost:8000/api/product/${productToEdit.id}/`,
+                    productToEdit,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    }
+                );
+
+                setProducts((prev) =>
+                    prev.map((product) =>
+                        product.id === productToEdit.id ? response.data : product
+                    )
+                );
+                setIsEditModalOpen(false);
+                setProductToEdit(null);
+            } catch (error) {
+                console.error('Error al editar el producto:', error);
+            }
+        }
+    };
+
+    // Función para eliminar un producto
+    const handleDeleteProduct = async (id: number) => {
+        try {
+            await axios.delete(`http://localhost:8000/api/product/${id}/`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            setProducts(products.filter((product) => product.id !== id));
+        } catch (error) {
+            console.error('Error al eliminar el producto:', error);
+        }
+    };
+
+    // Filtrado de productos
+    const filteredProducts = products.filter((product) => {
         const matchesSearch = product.nombre.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'Todos' || product.categoria === selectedCategory;
         return matchesSearch && matchesCategory;
     });
 
     const getStockStatus = (stock: number) => {
-        if (stock === 0) return <span className="text-red-500">Sin stock</span>;
+        if (stock <= 0) return <span className="text-red-500">Sin stock</span>;
         return <span className="text-green-600">{stock} en stock</span>;
     };
 
@@ -111,7 +164,7 @@ const ProductList: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Productos</h1>
                 <button
-                    onClick={() => setIsModalOpen(true)} // Abre el modal cuando se hace clic
+                    onClick={() => setIsAddModalOpen(true)}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
                 >
                     <Plus size={20} />
@@ -172,110 +225,176 @@ const ProductList: React.FC = () => {
                             <tr key={product.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center">
-                                        <Package className="h-8 w-8 text-gray-400" />
-                                        <div className="ml-4">
-                                            <div className="text-sm font-medium text-gray-900">{product.nombre}</div>
-                                        </div>
+                                        <Package size={20} className="mr-2 text-blue-500" />
+                                        {product.nombre}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 text-sm text-gray-500">
-                                    {product.sku || '-'}
-                                </td>
-                                <td className="px-6 py-4 text-sm">
-                                    {getStockStatus(product.stock)}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-900">
-                                    ${product.precio}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-500">
-                                    {product.categoria || '-'}
-                                </td>
-                                <td className="px-6 py-4 text-right text-sm font-medium">
-                                    <button className="text-blue-600 hover:text-blue-900 mr-3">Editar</button>
-                                    <button className="text-red-600 hover:text-red-900">Eliminar</button>
+                                <td className="px-6 py-4">{product.sku}</td>
+                                <td className="px-6 py-4">{getStockStatus(product.stock)}</td>
+                                <td className="px-6 py-4">{product.precio}</td>
+                                <td className="px-6 py-4">{product.categoria}</td>
+                                <td className="px-6 py-4 text-right">
+                                    <button
+                                        onClick={() => {
+                                            setProductToEdit(product);
+                                            setIsEditModalOpen(true);
+                                        }}
+                                        className="text-blue-600 hover:text-blue-800"
+                                    >
+                                        Editar
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteProduct(product.id)}
+                                        className="text-red-600 hover:text-red-800 ml-4"
+                                    >
+                                        Eliminar
+                                    </button>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
-
-            {/* Modal de Añadir Producto */}
-            {isModalOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                        <h2 className="text-xl font-semibold mb-4">Añadir Producto</h2>
-                        <input
-                            type="text"
-                            name="nombre"
-                            value={newProduct.nombre}
-                            onChange={handleInputChange}
-                            placeholder="Nombre del Producto"
-                            className="w-full mb-4 px-4 py-2 border rounded-lg"
-                        />
-                        <input
-                            type="text"
-                            name="descripcion"
-                            value={newProduct.descripcion}
-                            onChange={handleInputChange}
-                            placeholder="Descripción"
-                            className="w-full mb-4 px-4 py-2 border rounded-lg"
-                        />
-                        <input
-                            type="number"
-                            name="precio"
-                            value={newProduct.precio}
-                            onChange={handleInputChange}
-                            placeholder="Precio"
-                            className="w-full mb-4 px-4 py-2 border rounded-lg"
-                        />
-                        <input
-                            type="number"
-                            name="cantidad_disponible"
-                            value={newProduct.cantidad_disponible}
-                            onChange={handleInputChange}
-                            placeholder="Cantidad Disponible"
-                            className="w-full mb-4 px-4 py-2 border rounded-lg"
-                        />
-                        <input
-                            type="number"
-                            name="stock"
-                            value={newProduct.stock}
-                            onChange={handleInputChange}
-                            placeholder="Stock"
-                            className="w-full mb-4 px-4 py-2 border rounded-lg"
-                        />
-                        <select
-                            name="categoria"
-                            value={newProduct.categoria}
-                            onChange={handleInputChange}
-                            className="w-full mb-4 px-4 py-2 border rounded-lg"
-                        >
-                            <option value="">Seleccione Categoría</option>
-                            <option value="Muebles">Muebles</option>
-                            <option value="Vasos">Vasos</option>
-                            <option value="MDF">MDF</option>
-                            <option value="Bolsas">Bolsas</option>
-                        </select>
-                        <div className="flex justify-end">
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="mr-2 text-gray-600 hover:text-gray-900"
+            
+                {/* Modal de Editar Producto */}
+                {isEditModalOpen && productToEdit && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+                        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                            <h2 className="text-xl font-semibold mb-4">Editar Producto</h2>
+                            <input
+                                type="text"
+                                name="nombre"
+                                value={productToEdit.nombre}
+                                onChange={handleInputChange}
+                                placeholder="Nombre del Producto"
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            />
+                            <input
+                                type="text"
+                                name="sku"
+                                value={productToEdit.sku}
+                                onChange={handleInputChange}
+                                placeholder="SKU"
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            />
+                            <input
+                                type="number"
+                                name="stock"
+                                value={productToEdit.stock || ''}
+                                onChange={handleInputChange}
+                                placeholder="Stock"
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            />
+                            <input
+                                type="number"
+                                name="precio"
+                                value={productToEdit.precio || ''}
+                                onChange={handleInputChange}
+                                placeholder="Precio"
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            />
+                            <select
+                                name="categoria"
+                                value={productToEdit.categoria}
+                                onChange={handleInputChange}
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
                             >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleAddProduct}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-                            >
-                                Añadir
-                            </button>
+                                <option value="">Seleccione Categoría</option>
+                                <option value="Muebles">Muebles</option>
+                                <option value="Vasos">Vasos</option>
+                                <option value="MDF">MDF</option>
+                                <option value="Bolsas">Bolsas</option>
+                            </select>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => setIsAddModalOpen(false)}
+                                    className="mr-2 text-gray-600 hover:text-gray-900"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleEditProduct}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                                >
+                                    Guardar Cambios
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
-    );
-};
+                )}
 
-export default ProductList;
+
+                {/* Modal de Añadir Producto */}
+                {isAddModalOpen && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+                        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                            <h2 className="text-xl font-semibold mb-4">Añadir Producto</h2>
+                            <input
+                                type="text"
+                                name="nombre"
+                                value={newProduct.nombre}
+                                onChange={handleInputChange}
+                                placeholder="Nombre del Producto"
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            />
+                            <input
+                                type="Text"
+                                name="sku"
+                                value={newProduct.sku}
+                                onChange={handleInputChange}
+                                placeholder="SKU"
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            />
+                            <input
+                                type="number"
+                                name="stock"
+                                value={newProduct.stock || ''}
+                                onChange={handleInputChange}
+                                placeholder="Stock"
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            />
+                            <input
+                                type="number"
+                                name="precio"
+                                value={newProduct.precio || ''}
+                                onChange={handleInputChange}
+                                placeholder="Precio"
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            />
+
+
+                            <select
+                                name="categoria"
+                                value={newProduct.categoria}
+                                onChange={handleInputChange}
+                                className="w-full mb-4 px-4 py-2 border rounded-lg"
+                            >
+                                <option value="">Seleccione Categoría</option>
+                                <option value="Muebles">Muebles</option>
+                                <option value="Vasos">Vasos</option>
+                                <option value="MDF">MDF</option>
+                                <option value="Bolsas">Bolsas</option>
+                            </select>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => setIsAddModalOpen(false)}
+                                    className="mr-2 text-gray-600 hover:text-gray-900"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleAddProduct}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                                >
+                                    Añadir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    
+    };
+    
+    export default ProductList;
