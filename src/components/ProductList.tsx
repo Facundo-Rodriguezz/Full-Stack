@@ -306,8 +306,8 @@ const ProductList: React.FC = () => {
                                 <option value="Bolsas">Bolsas</option>
                             </select>
                             <div className="flex justify-end">
-                                <button
-                                    onClick={() => setIsAddModalOpen(false)}
+                            <button
+                                    onClick={() => setIsEditModalOpen(false)}
                                     className="mr-2 text-gray-600 hover:text-gray-900"
                                 >
                                     Cancelar
