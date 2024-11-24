@@ -1,5 +1,4 @@
-import React from 'react';
-
+import axios from 'axios';
 import {
   BarChart3,
   Package,
@@ -8,7 +7,7 @@ import {
   TrendingUp,
   DollarSign,
 } from 'lucide-react';
-import { Image } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const stats = [
   {
@@ -42,6 +41,16 @@ const stats = [
 ];
 
 const Dashboard = () => {
+
+  const [movements, setMovements] = useState([]);
+
+  useEffect(() => {
+    axios.get('http://localhost:8000/api/movimientos-stock/', ).then((res) => {
+      console.log(res);
+      setMovements(res.data);
+    });
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -99,10 +108,11 @@ const Dashboard = () => {
           </div>
           <div className="flow-root">
             <ul className="-mb-8">
-              {[1, 2, 3].map((item, itemIdx) => (
-                <li key={item}>
+            {movements && movements.length > 0 ? (
+              movements.map((movement, idx) => (
+                <li key={movement.id}>
                   <div className="relative pb-8">
-                    {itemIdx !== 2 ? (
+                    {idx !== movements.length - 1 ? (
                       <span
                         className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
                         aria-hidden="true"
@@ -117,18 +127,25 @@ const Dashboard = () => {
                       <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                         <div>
                           <p className="text-sm text-gray-500">
-                            Producto <span className="font-medium text-gray-900">SKU-1234</span> stock
-                            actualizado
+                            Producto <span className="font-medium text-gray-900">{movement.producto.nombre}</span>{' '}
+                            {movement.tipo_movimiento}
                           </p>
                         </div>
                         <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                          <time dateTime="2024-03-13">hace una hora</time>
+                          <time dateTime={movement.fecha}>
+                            {formatRelativeTime(movement.fecha)}
+                          </time>
                         </div>
                       </div>
                     </div>
                   </div>
                 </li>
-              ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No hay movimientos registrados
+              </div>
+            )}
             </ul>
           </div>
         </div>
