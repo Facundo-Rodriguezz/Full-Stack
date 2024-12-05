@@ -12,6 +12,7 @@ interface Product {
 }
 
 const ProductList: React.FC = () => {
+    const [error, setError] = useState('');
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +35,16 @@ const ProductList: React.FC = () => {
         id: number;
         nombre: string;
     }
+    const resetAddProductForm = () => {
+        setNewProduct({
+            id: 0,
+            nombre: '',
+            codigo: '',
+            cantidad_disponible: 0,
+            precio: 0,
+            categoria: '',
+        });
+    };
 
     const [categories, setCategories] = useState<Category[]>([]);
 
@@ -94,64 +105,66 @@ const ProductList: React.FC = () => {
 
     const handleAddProduct = async (event: React.FormEvent) => {
         event.preventDefault();
+        if (!newProduct.nombre || !newProduct.codigo || !newProduct.cantidad_disponible || !newProduct.precio || !productCategory) {
+            setError('Por favor, complete todo los campos.');
+        } else if (isNaN(Number(newProduct.cantidad_disponible)) || isNaN(Number(newProduct.precio))) {
+            setError('Por favor, ingresa valores válidos en los campos de cantidad y precio.');
+        } else {
+            setError('');
+            try {
+                const response = await axios.post("http://localhost:8000/api/product/", {
+                    nombre: newProduct.nombre,
+                    codigo: newProduct.codigo,
+                    cantidad_disponible: newProduct.cantidad_disponible,
+                    precio: newProduct.precio,
+                    categoria: productCategory,
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
 
-        if (!newProduct.nombre || newProduct.precio <= 0 || productCategory === null) {
-            alert("Por favor, completa todos los campos obligatorios.");
-            return;
-        }
 
-        try {
-            const response = await axios.post("http://localhost:8000/api/product/", {
-                nombre: newProduct.nombre,
-                codigo: newProduct.codigo,
-                cantidad_disponible: newProduct.cantidad_disponible,
-                precio: newProduct.precio,
-                categoria: productCategory,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
-
-            
-            const addedProduct = {
-                id: response.data.id,
-                nombre: response.data.nombre,
-                codigo: response.data.codigo,
-                cantidad_disponible: response.data.cantidad_disponible,
-                precio: response.data.precio,
-                categoria: productCategory.toString(),
-            };
-            
-
-            setProducts((prevProducts) => [...prevProducts, addedProduct]);
-
-            
-            setIsAddModalOpen(false);
-
-            const categoryExists = categories.some(cat => cat.id === productCategory);
-            if (!categoryExists) {
-                const newCategory = {
-                    id: productCategory,
-                    nombre: addedProduct.categoria,
+                const addedProduct = {
+                    id: response.data.id,
+                    nombre: response.data.nombre,
+                    codigo: response.data.codigo,
+                    cantidad_disponible: response.data.cantidad_disponible,
+                    precio: response.data.precio,
+                    categoria: productCategory.toString(),
                 };
-                setCategories((prevCategories) => [...prevCategories, newCategory]);
+
+
+                setProducts((prevProducts) => [...prevProducts, addedProduct]);
+
+
+                setIsAddModalOpen(false);
+
+                const categoryExists = categories.some(cat => cat.id === productCategory);
+                if (!categoryExists) {
+                    const newCategory = {
+                        id: productCategory,
+                        nombre: addedProduct.categoria,
+                    };
+                    setCategories((prevCategories) => [...prevCategories, newCategory]);
+                }
+
+                setNewProduct({
+                    id: 0,
+                    nombre: '',
+                    codigo: '',
+                    cantidad_disponible: 0,
+                    precio: 0,
+                    categoria: '',
+                });
+
+                setProductCategory(null);
+                setError('');
+            } catch (err) {
+                console.error("Error al agregar el producto:", err);
+                alert("Hubo un error al intentar añadir el producto. Por favor, intenta nuevamente.");
             }
-
-            setNewProduct({
-                id: 0,
-                nombre: '',
-                codigo: '',
-                cantidad_disponible: 0,
-                precio: 0,
-                categoria: '',
-            });
-
-            setProductCategory(null);
-        } catch (err) {
-            console.error("Error al agregar el producto:", err);
-            alert("Hubo un error al intentar añadir el producto. Por favor, intenta nuevamente.");
         }
     };
 
@@ -160,12 +173,17 @@ const ProductList: React.FC = () => {
 
 
     const handleEditProduct = async () => {
-        if (productToEdit) {
+        if (!productToEdit?.nombre || !productToEdit?.codigo || !productToEdit?.cantidad_disponible || !productToEdit?.precio || !productCategory) {
+            setError('Por favor, complete todo los campos.');
+        } else if (isNaN(Number(newProduct.cantidad_disponible)) || isNaN(Number(newProduct.precio))) {
+            setError('Por favor, ingresa valores válidos en los campos de cantidad y precio.');
+        } else {
+            setError('');
             try {
-                
+
                 const updatedProduct = {
                     ...productToEdit,
-                    categoria: productCategory,  
+                    categoria: productCategory,
                 };
 
                 const response = await axios.put(
@@ -187,6 +205,7 @@ const ProductList: React.FC = () => {
                 setIsEditModalOpen(false);
                 setProductToEdit(null);
                 setProductCategory(null);
+                setError('');
             } catch (error) {
                 console.error('Error editing product:', error);
             }
@@ -344,62 +363,83 @@ const ProductList: React.FC = () => {
                     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
                         <div className="bg-white p-6 rounded-lg shadow-xl w-96">
                             <h2 className="text-xl font-bold mb-4">Añadir Producto</h2>
+
+                            {/* Cartel de error */}
+                            {error && (
+                                <div className="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+                                    <strong>¡Error!</strong> {error}
+                                </div>
+                            )}
+
                             <div className="mb-4">
-                                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">Nombre</label>
+                                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+                                    Nombre <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     id="nombre"
                                     name="nombre"
-                                    placeholder='Nombre'
-                                    className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Nombre"
+                                    className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${!newProduct.nombre && error ? 'border-red-500' : ''}`}
                                     value={newProduct.nombre}
                                     onChange={handleInputChange}
                                 />
                             </div>
+
                             <div className="mb-4">
-                                <label htmlFor="codigo" className="block text-sm font-medium text-gray-700">Código</label>
+                                <label htmlFor="codigo" className="block text-sm font-medium text-gray-700">
+                                    Código <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     id="codigo"
                                     name="codigo"
-                                    placeholder='Código'
-                                    className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Código"
+                                    className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${!newProduct.codigo && error ? 'border-red-500' : ''}`}
                                     value={newProduct.codigo}
                                     onChange={handleInputChange}
-
                                 />
                             </div>
+
                             <div className="mb-4">
-                                <label htmlFor="cantidad_disponible" className="block text-sm font-medium text-gray-700">Stock</label>
+                                <label htmlFor="cantidad_disponible" className="block text-sm font-medium text-gray-700">
+                                    Stock <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="number"
                                     id="cantidad_disponible"
                                     name="cantidad_disponible"
-                                    placeholder='Stock'
-                                    className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Stock"
+                                    className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${(!newProduct.cantidad_disponible || isNaN(Number(newProduct.cantidad_disponible))) && error ? 'border-red-500' : ''}`}
                                     value={newProduct.cantidad_disponible}
                                     onChange={handleInputChange}
                                 />
                             </div>
+
                             <div className="mb-4">
-                                <label htmlFor="precio" className="block text-sm font-medium text-gray-700">Precio</label>
+                                <label htmlFor="precio" className="block text-sm font-medium text-gray-700">
+                                    Precio <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="number"
                                     id="precio"
                                     name="precio"
-                                    placeholder='Precio'
-                                    className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Precio"
+                                    className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${(!newProduct.precio || isNaN(Number(newProduct.precio))) && error ? 'border-red-500' : ''}`}
                                     value={newProduct.precio}
                                     onChange={handleInputChange}
                                 />
                             </div>
+
                             <div className="mb-4">
-                                <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">Categoría</label>
+                                <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">
+                                    Categoría <span className="text-red-500">*</span>
+                                </label>
                                 <div className="relative">
                                     <select
-                                        value={productCategory ?? ''}
+                                        value={productCategory ?? ""}
                                         onChange={(e) => setProductCategory(Number(e.target.value) || null)}
-                                        className="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                                        className={`mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none ${(!productCategory && error) ? 'border-red-500' : ''}`}
                                     >
                                         <option value="">Selecciona una categoría</option>
                                         {categories.map((category) => (
@@ -415,19 +455,25 @@ const ProductList: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex justify-end">
+
+                            <div className="flex justify-end space-x-4">
+                                <button
+
+                                    onClick={() => {
+                                        resetAddProductForm(); // Limpia el formulario
+                                        setError('');
+                                        setIsAddModalOpen(false); // Cierra el modal
+                                    }}
+                                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                                >
+                                    Cancelar
+                                </button>
                                 <button
                                     onClick={handleAddProduct}
                                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                                 >
                                     Añadir Producto
                                 </button>
-                                <button
-                                    onClick={() => setIsAddModalOpen(false)}
-                                    className="ml-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-                                >
-                                    Cancelar
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -437,99 +483,142 @@ const ProductList: React.FC = () => {
 
 
 
-            {/* Modal Editar Producto */}
+
+
+
+
+
+
             {isEditModalOpen && productToEdit && (
                 <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
                     <div className="bg-white p-6 rounded-lg shadow-xl w-96">
                         <h2 className="text-xl font-bold mb-4">Editar Producto</h2>
+
+                        {/* Nombre */}
                         <div className="mb-4">
-                            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">Nombre</label>
+                            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+                                Nombre <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 id="nombre"
                                 name="nombre"
-                                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={productToEdit.nombre}
+                                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${!productToEdit.nombre ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                value={productToEdit.nombre || ''}
                                 onChange={handleInputChange}
+                                required
                             />
+                            {!productToEdit.nombre && (
+                                <p className="text-red-500 text-sm mt-1">Este campo es obligatorio.</p>
+                            )}
                         </div>
+
+                        {/* Código */}
                         <div className="mb-4">
-                            <label htmlFor="codigo" className="block text-sm font-medium text-gray-700">Código</label>
+                            <label htmlFor="codigo" className="block text-sm font-medium text-gray-700">
+                                Código <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 id="codigo"
                                 name="codigo"
-                                placeholder='Código'
-                                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={productToEdit.codigo}
+                                placeholder="Código"
+                                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${!productToEdit.codigo ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                value={productToEdit.codigo || ''}
                                 onChange={handleInputChange}
-
+                                required
                             />
+                            {!productToEdit.codigo && (
+                                <p className="text-red-500 text-sm mt-1">Este campo es obligatorio.</p>
+                            )}
                         </div>
+
+                        {/* Stock */}
                         <div className="mb-4">
-                            <label htmlFor="cantidad_disponible" className="block text-sm font-medium text-gray-700">Stock</label>
+                            <label htmlFor="cantidad_disponible" className="block text-sm font-medium text-gray-700">
+                                Stock <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="number"
                                 id="cantidad_disponible"
                                 name="cantidad_disponible"
-                                placeholder='Stock'
-                                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={productToEdit.cantidad_disponible}
+                                placeholder="Stock"
+                                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${!productToEdit.cantidad_disponible ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                value={productToEdit.cantidad_disponible || ''}
                                 onChange={handleInputChange}
+                                required
                             />
+                            {!productToEdit.cantidad_disponible && (
+                                <p className="text-red-500 text-sm mt-1">Este campo es obligatorio.</p>
+                            )}
                         </div>
+
+                        {/* Precio */}
                         <div className="mb-4">
-                            <label htmlFor="precio" className="block text-sm font-medium text-gray-700">Precio</label>
+                            <label htmlFor="precio" className="block text-sm font-medium text-gray-700">
+                                Precio <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="number"
                                 id="precio"
                                 name="precio"
-                                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={productToEdit.precio}
+                                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${!productToEdit.precio ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                value={productToEdit.precio || ''}
                                 onChange={handleInputChange}
+                                required
                             />
+                            {!productToEdit.precio && (
+                                <p className="text-red-500 text-sm mt-1">Este campo es obligatorio.</p>
+                            )}
                         </div>
+
+                        {/* Categoría */}
                         <div className="mb-4">
-                            <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">Categoría</label>
-                            <div className="relative">
-                                <select
-                                    value={productCategory ?? ''}
-                                    onChange={(e) => setProductCategory(Number(e.target.value) || null)}
-                                    className="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
-                                >
-                                    <option value="">Selecciona una categoría</option>
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.nombre}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </div>
-                            </div>
+                            <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">
+                                Categoría <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={productCategory ?? ''}
+                                onChange={(e) => setProductCategory(Number(e.target.value) || null)}
+                                className={`mt-1 block w-full px-4 py-2 pr-10 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!productCategory ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                required
+                            >
+                                <option value="">Selecciona una categoría</option>
+                                {categories.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                            {!productCategory && (
+                                <p className="text-red-500 text-sm mt-1">Este campo es obligatorio.</p>
+                            )}
                         </div>
-                        <div className="flex justify-end">
+
+                        {/* Botones */}
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                            >
+                                Cancelar
+                            </button>
                             <button
                                 onClick={handleEditProduct}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                             >
                                 Guardar cambios
                             </button>
-                            <button
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="ml-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-                            >
-                                Cancelar
-                            </button>
                         </div>
                     </div>
                 </div>
             )}
         </div>
-    );
-};
-
+    )
+}
 export default ProductList;
