@@ -29,28 +29,30 @@ const Inventory = () => {
     });
   }, []);
 
-  function getTipoMovimiento(tipo_movimiento: string): React.ReactNode {
+  function getTipoMovimiento(movimiento: Movimiento): React.ReactNode {
+    const { tipo_movimiento, comentario } = movimiento;
+    
     switch (tipo_movimiento) {
       case 'entrada':
         return (
-          <>
+          <div title={comentario} className="flex items-center">
             <ArrowUp className="h-4 w-4 text-green-500" />
             <span className="ml-1">Entrada</span>
-          </>
+          </div>
         );
       case 'salida':
         return (
-          <>
+          <div title={comentario} className="flex items-center">
             <ArrowDown className="h-4 w-4 text-red-500" />
             <span className="ml-1">Salida</span>
-          </>
+          </div>
         );
       case 'eliminacion':
         return (
-          <>
+          <div title={comentario} className="flex items-center">
             <ArrowDown className="h-4 w-4 text-red-500" />
             <span className="ml-1">Eliminación</span>
-          </>
+          </div>
         );
       default:
         return null;
@@ -80,7 +82,7 @@ const Inventory = () => {
                   Producto
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tipo
+                  Movimiento
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cantidad
@@ -114,7 +116,7 @@ const Inventory = () => {
                           : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {getTipoMovimiento(movement.tipo_movimiento)}
+                      {getTipoMovimiento(movement)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
