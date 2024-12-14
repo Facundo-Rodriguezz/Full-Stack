@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, Package, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, Package, Search, RefreshCcw } from 'lucide-react';
 import axios from 'axios';
 
 interface Movimiento {
@@ -39,24 +39,39 @@ const Inventory = () => {
     switch (tipo_movimiento) {
       case 'entrada':
         return (
-          <div title={comentario} className="flex items-center">
-            <ArrowUp className="h-4 w-4 text-green-500" />
-            <span className="ml-1">Entrada</span>
-          </div>
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            <div title={comentario} className="flex items-center">
+              <ArrowUp className="h-4 w-4 text-green-500" />
+              <span className="ml-1">Entrada</span>
+            </div>
+          </span>
         );
       case 'salida':
         return (
-          <div title={comentario} className="flex items-center">
-            <ArrowDown className="h-4 w-4 text-red-500" />
-            <span className="ml-1">Salida</span>
-          </div>
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+            <div title={comentario} className="flex items-center">
+              <ArrowDown className="h-4 w-4 text-red-500" />
+              <span className="ml-1">Salida</span>
+            </div>
+          </span>
         );
       case 'eliminacion':
         return (
-          <div title={comentario} className="flex items-center">
-            <ArrowDown className="h-4 w-4 text-red-500" />
-            <span className="ml-1">Eliminación</span>
-          </div>
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+            <div title={comentario} className="flex items-center">
+              <ArrowDown className="h-4 w-4 text-red-500" />
+              <span className="ml-1">Eliminación</span>
+            </div>
+          </span>
+        );
+      case 'modificacion':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+            <div title={comentario} className="flex items-center">
+              <RefreshCcw className="h-4 w-4 text-blue-500" />
+              <span className="ml-1">Modificación</span>
+            </div>
+          </span>
         );
       default:
         return null;
@@ -124,15 +139,7 @@ const Inventory = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        movement.tipo_movimiento == 'entrada'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
                       {getTipoMovimiento(movement)}
-                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {movement.cantidad} Unidades
