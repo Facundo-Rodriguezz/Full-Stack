@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, Package } from 'lucide-react';
+import { ArrowDown, ArrowUp, Package, Search } from 'lucide-react';
 import axios from 'axios';
 
 interface Movimiento {
@@ -14,9 +14,13 @@ interface Movimiento {
 
 const Inventory = () => {
   const [movements, setMovements] = useState<Movimiento[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
 
   useEffect(() => {
-    axios.get('http://localhost:8000/api/movimientos-stock/', ).then((res) => {
+    const params = new URLSearchParams();
+    params.append('search', searchTerm);
+    axios.get('http://localhost:8000/api/movimientos-stock/', { params }).then((res) => {
       setMovements(res.data.map((movement: any) => ({
         id: movement.id,
         fecha: movement.fecha,
@@ -27,7 +31,7 @@ const Inventory = () => {
         comentario: movement.comentario,
       })));
     });
-  }, []);
+  }, [searchTerm]);
 
   function getTipoMovimiento(movimiento: Movimiento): React.ReactNode {
     const { tipo_movimiento, comentario } = movimiento;
@@ -67,6 +71,17 @@ const Inventory = () => {
         </div>
       </div>
 
+      <div className="flex-1 relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+        <input
+            type="text"
+            placeholder="Buscar por nombre o codigo..."
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       <div className="bg-white shadow overflow-hidden sm:rounded-lg">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -76,7 +91,7 @@ const Inventory = () => {
                   Dato
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Referencia
+                  Código
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Producto
