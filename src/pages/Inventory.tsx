@@ -1,40 +1,100 @@
-import React from 'react';
-import { ArrowDown, ArrowUp, Package } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowDown, ArrowUp, Package, Search, RefreshCcw } from 'lucide-react';
+import axios from 'axios';
 
-const movements = [
-  {
-    id: 1,
-    type: 'in',
-    product: 'Silla de oficina',
-    quantity: 10,
-    date: '2024-03-13',
-    reference: 'PO-001',
-  },
-  {
-    id: 2,
-    type: 'out',
-    product: 'Bandeja fibro facil',
-    quantity: 0,
-    date: '2024-03-12',
-    reference: 'SO-001',
-  },
-  {
-    id: 3,
-    type: 'in',
-    product: 'Raton Inalambrico',
-    quantity: 20,
-    date: '2024-03-11',
-    reference: 'PO-002',
-  },
-];
+interface Movimiento {
+  id: number;
+  fecha: string;
+  codigo: string;
+  producto_nombre: string;
+  tipo_movimiento: string;
+  cantidad: number;
+  comentario: string;
+}
 
 const Inventory = () => {
+  const [movements, setMovements] = useState<Movimiento[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.append('search', searchTerm);
+    axios.get('http://localhost:8000/api/movimientos-stock/', { params }).then((res) => {
+      setMovements(res.data.map((movement: any) => ({
+        id: movement.id,
+        fecha: movement.fecha,
+        codigo: movement.producto_codigo,
+        tipo_movimiento: movement.tipo_movimiento,
+        cantidad: movement.cantidad,
+        producto_nombre: movement.producto_nombre,
+        comentario: movement.comentario,
+      })));
+    });
+  }, [searchTerm]);
+
+  function getTipoMovimiento(movimiento: Movimiento): React.ReactNode {
+    const { tipo_movimiento, comentario } = movimiento;
+    
+    switch (tipo_movimiento) {
+      case 'entrada':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            <div title={comentario} className="flex items-center">
+              <ArrowUp className="h-4 w-4 text-green-500" />
+              <span className="ml-1">Entrada</span>
+            </div>
+          </span>
+        );
+      case 'salida':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+            <div title={comentario} className="flex items-center">
+              <ArrowDown className="h-4 w-4 text-red-500" />
+              <span className="ml-1">Salida</span>
+            </div>
+          </span>
+        );
+      case 'eliminacion':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+            <div title={comentario} className="flex items-center">
+              <ArrowDown className="h-4 w-4 text-red-500" />
+              <span className="ml-1">Eliminación</span>
+            </div>
+          </span>
+        );
+      case 'modificacion':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+            <div title={comentario} className="flex items-center">
+              <RefreshCcw className="h-4 w-4 text-blue-500" />
+              <span className="ml-1">Modificación</span>
+            </div>
+          </span>
+        );
+      default:
+        return null;
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">Registro de Inventario</h1>
         <div className="flex space-x-3">
         </div>
+      </div>
+
+      <div className="flex-1 relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+        <input
+            type="text"
+            placeholder="Buscar por nombre o codigo..."
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -46,13 +106,13 @@ const Inventory = () => {
                   Dato
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Referencia
+                  Código
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Producto
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tipo
+                  Movimiento
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cantidad
@@ -63,10 +123,10 @@ const Inventory = () => {
               {movements.map((movement) => (
                 <tr key={movement.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {movement.date}
+                    {new Date(movement.fecha).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {movement.reference}
+                    {movement.codigo}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -74,23 +134,15 @@ const Inventory = () => {
                         <Package className="h-4 w-4 text-gray-500" />
                       </div>
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{movement.product}</div>
+                        <div className="text-sm font-medium text-gray-900">{movement.producto_nombre}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        movement.type === 'in'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {movement.type === 'in' ? 'Stock Actual' : 'Stock Agotado'}
-                    </span>
+                      {getTipoMovimiento(movement)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {movement.quantity} Unidades
+                    {movement.cantidad} Unidades
                   </td>
                 </tr>
               ))}

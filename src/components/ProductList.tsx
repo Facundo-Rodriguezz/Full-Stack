@@ -75,12 +75,8 @@ const ProductList: React.FC = () => {
         fetchCategories();
     }, [token]);
 
-
-
-
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-
 
         if (productToEdit) {
             setProductToEdit((prevProduct) =>
@@ -90,7 +86,6 @@ const ProductList: React.FC = () => {
             setNewProduct((prevProduct) => ({ ...prevProduct, [name]: value }));
         }
     };
-
 
     const handleAddProduct = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -114,7 +109,6 @@ const ProductList: React.FC = () => {
                 },
             });
 
-            
             const addedProduct = {
                 id: response.data.id,
                 nombre: response.data.nombre,
@@ -123,11 +117,9 @@ const ProductList: React.FC = () => {
                 precio: response.data.precio,
                 categoria: productCategory.toString(),
             };
-            
 
             setProducts((prevProducts) => [...prevProducts, addedProduct]);
 
-            
             setIsAddModalOpen(false);
 
             const categoryExists = categories.some(cat => cat.id === productCategory);
@@ -155,17 +147,12 @@ const ProductList: React.FC = () => {
         }
     };
 
-
-
-
-
     const handleEditProduct = async () => {
         if (productToEdit) {
             try {
-                
                 const updatedProduct = {
                     ...productToEdit,
-                    categoria: productCategory,  
+                    categoria: productCategory,
                 };
 
                 const response = await axios.put(
@@ -193,7 +180,6 @@ const ProductList: React.FC = () => {
         }
     };
 
-
     const handleDeleteProduct = async (id: number) => {
         try {
             await axios.delete(`http://localhost:8000/api/product/${id}/`, {
@@ -215,12 +201,10 @@ const ProductList: React.FC = () => {
         return matchesSearch && matchesCategory;
     });
 
-
-    const getcantidad_disponibleStatus = (cantidad_disponible: number) => {
-        if (cantidad_disponible <= 0) return <span className="text-red-500">Sin stock</span>;
-        return <span className="text-green-600">{cantidad_disponible} en stock</span>;
+    const getStockStatus = (stockQuantity: number) => {
+        if (stockQuantity <= 0) return <span className="text-red-500">Sin stock</span>;
+        return <span className="text-green-600">{stockQuantity} en stock</span>;
     };
-
 
     if (loading) {
         return (
@@ -258,6 +242,7 @@ const ProductList: React.FC = () => {
                     <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">Categoría</label>
                     <div className="relative">
                         <select
+                            id="categoria"
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
                             className="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
@@ -276,7 +261,7 @@ const ProductList: React.FC = () => {
 
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                             <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </div>
                     </div>
@@ -312,9 +297,11 @@ const ProductList: React.FC = () => {
                             <tr key={product.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.nombre}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.codigo}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getcantidad_disponibleStatus(product.cantidad_disponible)}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getStockStatus(product.cantidad_disponible)}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.precio}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{categories.find((x) => x.id.toString() == product.categoria)?.nombre}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {categories.find((cat) => cat.id === Number(product.categoria))?.nombre}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                                     <button
                                         onClick={() => {
@@ -366,8 +353,7 @@ const ProductList: React.FC = () => {
                                     className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                                     value={newProduct.codigo}
                                     onChange={handleInputChange}
-
-                                />
+                                    />
                             </div>
                             <div className="mb-4">
                                 <label htmlFor="cantidad_disponible" className="block text-sm font-medium text-gray-700">Stock</label>
@@ -396,9 +382,9 @@ const ProductList: React.FC = () => {
                             <div className="mb-4">
                                 <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">Categoría</label>
                                 <div className="relative">
-                                    <select
-                                        value={productCategory ?? ''}
-                                        onChange={(e) => setProductCategory(Number(e.target.value) || null)}
+                                <select
+                                        value={productCategory ?? ''}  
+                                        onChange={(e) => setProductCategory(Number(e.target.value) || null)}  
                                         className="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
                                     >
                                         <option value="">Selecciona una categoría</option>
@@ -410,7 +396,7 @@ const ProductList: React.FC = () => {
                                     </select>
                                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
                                     </div>
                                 </div>
@@ -433,9 +419,7 @@ const ProductList: React.FC = () => {
                     </div>
                 </div>
             )}
-
-
-
+        
 
             {/* Modal Editar Producto */}
             {isEditModalOpen && productToEdit && (
@@ -493,8 +477,8 @@ const ProductList: React.FC = () => {
                             <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">Categoría</label>
                             <div className="relative">
                                 <select
-                                    value={productCategory ?? ''}
-                                    onChange={(e) => setProductCategory(Number(e.target.value) || null)}
+                                    value={productCategory ?? ''}  
+                                    onChange={(e) => setProductCategory(Number(e.target.value) || null)}  
                                     className="mt-1 block w-full px-4 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
                                 >
                                     <option value="">Selecciona una categoría</option>
@@ -506,7 +490,7 @@ const ProductList: React.FC = () => {
                                 </select>
                                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </div>
                             </div>
@@ -516,7 +500,7 @@ const ProductList: React.FC = () => {
                                 onClick={handleEditProduct}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                             >
-                                Guardar cambios
+                                Guardar Cambios
                             </button>
                             <button
                                 onClick={() => setIsEditModalOpen(false)}
