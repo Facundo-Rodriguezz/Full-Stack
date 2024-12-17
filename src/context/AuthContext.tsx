@@ -30,12 +30,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    const refresh = localStorage.getItem("refresh")
+    const token = localStorage.getItem("token");
+    const refresh = localStorage.getItem("refresh");
     if (token && refresh) {
       const cred: Credencial = {access: token, refresh: refresh};
       setCredencial(cred);
       const tokenDecoded = JSON.parse(atob(token.split('.')[1])); 
+      // Valido que el token no haya expirado
+      if (Date.now() >= tokenDecoded.exp * 1000) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refresh");
+        setLoadingInitial(false);
+        navigate('/login/');
+        return;
+      }
       setUser({
         id: tokenDecoded.user_id,
         name: tokenDecoded.username,
@@ -44,6 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       setLoadingInitial(false);
     } else {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh");
       setLoadingInitial(false);
       navigate('/login/');
     }

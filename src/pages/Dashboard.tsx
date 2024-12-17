@@ -46,10 +46,13 @@ const Dashboard = () => {
 
   useEffect(() => {
     axios.get('http://localhost:8000/api/movimientos-stock/', ).then((res) => {
-      console.log(res);
       setMovements(res.data);
     });
   }, []);
+
+  function formatRelativeTime(fecha: any): import("react").ReactNode {
+    return new Date(fecha).toLocaleDateString();
+  }
 
   return (
     <div className="space-y-6">
@@ -127,7 +130,7 @@ const Dashboard = () => {
                       <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                         <div>
                           <p className="text-sm text-gray-500">
-                            Producto <span className="font-medium text-gray-900">{movement.producto.nombre}</span>{' '}
+                            Producto <span className="font-medium text-gray-900">{movement.producto_nombre}</span>{' '}
                             {movement.tipo_movimiento}
                           </p>
                         </div>
