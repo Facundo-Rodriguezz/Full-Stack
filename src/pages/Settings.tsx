@@ -1,4 +1,3 @@
-import React from 'react';
 import { Building, Mail, Globe, Bell, Lock, Shield } from 'lucide-react';
 
 const Settings = () => {

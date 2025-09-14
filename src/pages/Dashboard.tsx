@@ -40,9 +40,17 @@ const stats = [
   },
 ];
 
+type Movement = {
+  id: number;
+  producto_nombre: string;
+  tipo_movimiento: string;
+  fecha: string;
+  // agrega aquí otras propiedades si las hay
+};
+
 const Dashboard = () => {
 
-  const [movements, setMovements] = useState([]);
+  const [movements, setMovements] = useState<Movement[]>([]);
 
   useEffect(() => {
     axios.get('http://localhost:8000/api/movimientos-stock/', ).then((res) => {

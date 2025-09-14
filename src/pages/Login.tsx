@@ -1,5 +1,5 @@
 // src/pages/Login.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock } from 'lucide-react';
@@ -7,7 +7,6 @@ import { Lock } from 'lucide-react';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [connectionMessage, setConnectionMessage] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -32,9 +31,6 @@ const Login = () => {
             Inicia sesión en tu cuenta
           </h2>
           {/* Mostrar el mensaje de conexión */}
-          {connectionMessage && (
-            <p className="text-center text-sm text-red-600">{connectionMessage}</p>
-          )}
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">

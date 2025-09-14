@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Login from '../pages/Login';
 
 const MyBoltComponent = () => {
   const [data, setData] = useState<string | null>(null);
@@ -24,7 +23,7 @@ const MyBoltComponent = () => {
       }
     };
 
-    //fetchData();
+    fetchData();
   }, []); // Se ejecuta solo una vez al montar el componente
 
   return (
@@ -38,4 +37,4 @@ const MyBoltComponent = () => {
   );
 };
 
-export default Login;
+export default MyBoltComponent;
